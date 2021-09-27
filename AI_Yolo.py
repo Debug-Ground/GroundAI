@@ -171,7 +171,7 @@ def yolo3(path):
         # Going through indexes of results
         for i in results.flatten():
             # Showing labels of the detected objects
-            object = object+labels[int(class_numbers[i])]+'\n'
+            object = object+labels[int(class_numbers[i])]+'|'
 
             # Incrementing counter
             counter += 1

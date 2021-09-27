@@ -6,6 +6,7 @@ import pymysql
 import os
 import numpy as np
 import cv2
+import requests
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -34,32 +35,43 @@ def ai_ground():
     print(request.form['kakaoid'])
     print("-----------------------------")
 
-    result = message.split('\n')
+    result = message.split('|')
+    result.pop()
     print(result)
 
-    # db= pymysql.connect(host=os.environ.get("DB_host"),
-    #             port=int(os.environ.get("DB_port")),
-    #             user=os.environ.get("DB_user"),
-    #             passwd=os.environ.get("DB_password"),
-    #             db=os.environ.get("DB_database"),
-    #             charset='utf8')
+    db= pymysql.connect(host=os.environ.get("DB_host"),
+                port=int(os.environ.get("DB_port")),
+                user=os.environ.get("DB_user"),
+                passwd=os.environ.get("DB_password"),
+                db=os.environ.get("DB_database"),
+                charset='utf8')
     
-    # cursor = db.cursor()
-
-    # for i in result :
-    #     if i == "no_goggles" :
-    #         print('1')
-    #     elif i == "no_vest" :
-    #         print("2")
-    #     elif i == "no_helmet" :
-    #         sql = "UPDATE Worker SET wEquipment = 'nohelmet' where wid = '1760690698'"
-    #     elif i == "no_gloves" :
-    #         print("4")
-    #     else :
-    #         print("5")
-    # cursor.execute(sql)
-    # db.commit()
-    # db.close()
+    cursor = db.cursor()
+    num = 0
+    for i in result :
+        if i == "no_goggles" :
+            print('1')
+            requests.post('https://grounda.hopto.org/manual/guide', data="no_goggles")
+        elif i == "no_vest" :
+            print("2")
+            requests.post('https://grounda.hopto.org/manual/guide', data="no_vest")
+        elif i == "no_helmet" :
+            print("3")
+            requests.post('https://grounda.hopto.org/manual/guide', data="no_helmet")
+        elif i == "no_gloves" :
+            print("4")
+            requests.post('https://grounda.hopto.org/manual/guide', data="no_gloves")
+        elif i ==  "helmet" or i=="vest" or i=="goggles":
+            num = num + 1
+            print(num)
+        if num==3:
+            requests.post('http://grounda.hopto.org:5001', data="success")
+            requests.post('https://grounda.hopto.org/manual/guide', data="success")
+            sql = "UPDATE Worker SET wEquipment = 'Success' where wid = '"+kakaoid+"'"
+            print("5")
+    cursor.execute(sql)
+    db.commit()
+    db.close()
     
     return request.form['kakaoid']
     
