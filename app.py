@@ -1,12 +1,18 @@
-from flask import Flask ,render_template, request
+from flask import Flask ,render_template, Request, Response, request
+from flask import stream_with_context
 from werkzeug.utils import secure_filename
 from AI_Yolo import yolo3
+from AI_Yolo_webcam import yolo_webcam
 import ssl
 import pymysql
 import os
 import numpy as np
 import cv2
 import requests
+from cctv.streamer import Streamer
+
+app = Flask( __name__ )
+streamer = Streamer()
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -14,6 +20,33 @@ app = Flask(__name__)
 @app.route("/",methods=['GET','POST'])
 def hello():
     return "HELLO WORD!"
+
+@app.route("/webcam",methods=['GET','POST'])
+def stream():
+    
+    src = request.args.get( 'src', default = 0, type = int )
+    
+    try :
+        return Response(stream_with_context( stream_gen( src ) ),mimetype='multipart/x-mixed-replace; boundary=frame' )
+        
+    except Exception as e :
+        print('[wandlab] ', 'stream error : ',str(e))
+
+def stream_gen( src ):   
+  
+    try : 
+        
+        streamer.run( src )
+        
+        while True :
+            
+            frame = streamer.bytescode()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                    
+    except GeneratorExit :
+        #print( '[wandlab]', 'disconnected stream' )
+        streamer.stop()
 
 @app.route("/test",methods=['GET','POST'])
 def ai_ground():
