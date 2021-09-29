@@ -9,7 +9,9 @@ import os
 import numpy as np
 import cv2
 import requests
+import urllib3
 from cctv.streamer import Streamer
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 app = Flask( __name__ )
 streamer = Streamer()
@@ -84,25 +86,27 @@ def ai_ground():
     for i in result :
         if i == "no_goggles" :
             print('1')
-            requests.post('https://grounda.hopto.org/manual/guide', data="no_goggles")
+            requests.post('https://grounda.hopto.org/manual/guide', data={"fail":"fail"}, verify=False)
         elif i == "no_vest" :
             print("2")
-            requests.post('https://grounda.hopto.org/manual/guide', data="no_vest")
+            requests.post('https://grounda.hopto.org/manual/guide', data={"fail":"fail"}, verify=False)
         elif i == "no_helmet" :
             print("3")
-            requests.post('https://grounda.hopto.org/manual/guide', data="no_helmet")
+            requests.post('https://grounda.hopto.org/manual/guide', data={"fail":"fail"}, verify=False)
         elif i == "no_gloves" :
             print("4")
-            requests.post('https://grounda.hopto.org/manual/guide', data="no_gloves")
+            requests.post('https://grounda.hopto.org/manual/guide', data={"no_gloves":"no_gloves"} , verify=False)
         elif i ==  "helmet" or i=="vest" or i=="goggles":
             num = num + 1
             print(num)
+
         if num==3:
             requests.post('http://grounda.hopto.org:5001', data="success")
-            requests.post('https://grounda.hopto.org/manual/guide', data="success")
+            requests.post('https://grounda.hopto.org/manual/guide', data={"success":"success"}, verify=False)
             sql = "UPDATE Worker SET wEquipment = 'Success' where wid = '"+kakaoid+"'"
+            cursor.execute(sql)
             print("5")
-    cursor.execute(sql)
+
     db.commit()
     db.close()
     
