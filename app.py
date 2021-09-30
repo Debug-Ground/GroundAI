@@ -1,6 +1,6 @@
 from flask import Flask ,render_template, Request, Response, request
 from flask import stream_with_context
-from werkzeug.utils import secure_filename
+from werkzeug.utils import redirect, secure_filename
 from AI_Yolo import yolo3
 from AI_Yolo_webcam import yolo_webcam
 import ssl
@@ -10,8 +10,23 @@ import numpy as np
 import cv2
 import requests
 import urllib3
+import webbrowser
+import time
 from cctv.streamer import Streamer
+
+from selenium import webdriver 
+from selenium.webdriver.common.by import By 
+from selenium.webdriver.support.ui import WebDriverWait 
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
+
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+options = Options()
+options.add_argument('--kiosk')
+driver = webdriver.Chrome('./chrome/chromedriver', chrome_options=options)
+
 
 app = Flask( __name__ )
 streamer = Streamer()
@@ -21,7 +36,19 @@ load_dotenv()
 app = Flask(__name__) 
 @app.route("/",methods=['GET','POST'])
 def hello():
-    return "HELLO WORD!"
+    return "Hello"
+
+@app.route("/fail",methods=['GET','POST'])
+def fail():
+    return render_template("guide_fail.html")
+
+@app.route("/success",methods=['GET','POST'])
+def success():
+    return render_template("guide_success.html")
+
+@app.route("/testing",methods=['GET','POST'])
+def testing():
+    return render_template("guide_testing.html")
 
 @app.route("/webcam",methods=['GET','POST'])
 def stream():
@@ -84,18 +111,24 @@ def ai_ground():
     cursor = db.cursor()
     num = 0
     for i in result :
-        if i == "no_goggles" :
+        if i == "no_goggles":
             print('1')
             requests.post('https://grounda.hopto.org/manual/guide', data={"fail":"fail"}, verify=False)
-        elif i == "no_vest" :
-            print("2")
+            driver.implicitly_wait(10)
+            driver.get('https://grounda.hopto.org:5000/fail')
+            time.sleep(5)
+            driver.get('https://grounda.hopto.org:5000/testing')
+
+        
+        elif i ==  "no_helmet":
+            print('2')
             requests.post('https://grounda.hopto.org/manual/guide', data={"fail":"fail"}, verify=False)
-        elif i == "no_helmet" :
-            print("3")
-            requests.post('https://grounda.hopto.org/manual/guide', data={"fail":"fail"}, verify=False)
-        elif i == "no_gloves" :
-            print("4")
-            requests.post('https://grounda.hopto.org/manual/guide', data={"no_gloves":"no_gloves"} , verify=False)
+            driver.implicitly_wait(10)
+            driver.get('https://grounda.hopto.org:5000/success')
+            time.sleep(5)
+            driver.get('https://grounda.hopto.org:5000/testing')
+
+
         elif i ==  "helmet" or i=="vest" or i=="goggles":
             num = num + 1
             print(num)
@@ -112,6 +145,7 @@ def ai_ground():
     
     return request.form['kakaoid']
     
+
 
 if __name__ == '__main__':
     ssl_context= ssl.SSLContext(ssl.PROTOCOL_TLS)
